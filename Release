@@ -1,0 +1,8 @@
+Origin: YouTubeFix iOS 10.3 Repo
+Label: YouTubeFix
+Suite: stable
+Version: 1.0
+Codename: ios103
+Architectures: iphoneos-arm
+Components: main
+Description: YouTubeFix repository for iOS 10.3
