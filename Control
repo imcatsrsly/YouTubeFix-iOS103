@@ -1,0 +1,8 @@
+Package: com.unigox.youtubefix
+Name: YouTubeFix
+Version: 1.0.0
+Description: Fix YouTube and Instagram for iOS 10.3.3
+Maintainer: Siri
+Author: Siri
+Architecture: iphoneos-arm
+Section: Tweaks

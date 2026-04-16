@@ -1,0 +1,48 @@
+name: Build Tweak
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Theos
+        run: |
+          git clone https://github.com/theos/theos.git /tmp/theos
+          echo "THEOS=/tmp/theos" >> $GITHUB_ENV
+          echo "PATH=/tmp/theos/bin:$PATH" >> $GITHUB_ENV
+
+      - name: Install SDK
+        run: |
+          cd $THEOS/sdks
+          curl -L "https://github.com/theos/sdks/releases/download/master-146e41f/iPhoneOS10.3.sdk.tar.xz" -o iPhoneOS10.3.sdk.tar.xz
+          tar -xf iPhoneOS10.3.sdk.tar.xz
+
+      - name: Build tweak
+        env:
+          ARCHS: arm64 armv7
+          TARGET: iphone:clang:latest:10.3
+        run: |
+          cd YouTubeFix
+          make clean
+          make
+
+      - name: Package
+        run: |
+          cd YouTubeFix
+          make package
+          ls -la .theos/obj/debug/
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: YouTubeFix
+          path: YouTubeFix/.theos/obj/debug/**/*.deb
+
