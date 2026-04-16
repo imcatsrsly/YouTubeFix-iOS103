@@ -7,7 +7,7 @@
 	<key>CFBundleName</key>
 	<string>YouTubeFix</string>
 	<key>CFBundleVersion</key>
-	<string>1.0.0</string>
+	<string>1.0.1</string>
 	<key>CFBundleExecutable</key>
 	<string>YouTubeFix</string>
 	<key>CFBundleDisplayName</key>
@@ -19,7 +19,6 @@
 		<key>Executables</key>
 		<array>
 			<string>YouTube</string>
-			<string>Instagram</string>
 		</array>
 		<key>UIApplication</key>
 		<true/>
