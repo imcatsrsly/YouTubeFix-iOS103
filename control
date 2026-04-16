@@ -1,7 +1,7 @@
 Package: com.unigox.youtubefix
 Name: YouTubeFix
-Version: 1.0.2
-Description: Fix YouTube SSL pinning and playback on iOS 10.3.3
+Version: 1.0.3
+Description: Patch InnerTube API client version to fix Error loading on iOS 10.3.3
 Maintainer: Siri
 Author: Siri
 Architecture: iphoneos-arm
