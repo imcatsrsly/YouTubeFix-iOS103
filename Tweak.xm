@@ -1,12 +1,12 @@
 #import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
 
-// YouTubeFix v1.0.3 - InnerTube API Version Patcher
+// YouTubeFix v1.0.4 - InnerTube API Version Patcher
 // Fix for "Error loading" on iOS 10.3.3
 
 // Target API version - use a more recent one that's still compatible
 static NSString * const kInnerTubeClientVersion = @"19.14.03";
-static NSString * const kInnerTubeApiKey = @"AIzaSyB-63vPrdThhKuerbB2N_l7Kwwcxj6yUAc";
+static NSString * const kInnerTubeApiKey = @"";
 
 // Hook NSURLSession to patch InnerTube requests
 %hook NSURLSession
@@ -17,44 +17,76 @@ static NSString * const kInnerTubeApiKey = @"AIzaSyB-63vPrdThhKuerbB2N_l7Kwwcxj6
     
     // Check if this is an InnerTube API request
     if ([urlString containsString:@"youtubei.googleapis.com"]) {
-        NSLog(@"YouTubeFix: Caught InnerTube request: %@", urlString);
         
-        // Clone the mutable request
         NSMutableURLRequest *mutableRequest = [request mutableCopy];
-        
-        // Get HTTP body
         NSData *bodyData = request.HTTPBody;
-        if (bodyData) {
+        
+        if (bodyData && bodyData.length > 0) {
+            // Try to parse as JSON first
             NSError *jsonError = nil;
             NSMutableDictionary *bodyDict = [NSJSONSerialization JSONObjectWithData:bodyData options:NSJSONReadingMutableContainers error:&jsonError];
             
-            if (bodyDict && !jsonError) {
-                // Patch client version
+            if (bodyDict && !jsonError && [bodyDict isKindOfClass:[NSDictionary class]]) {
+                // Successfully parsed as JSON
+                BOOL patched = NO;
+                
                 if ([bodyDict objectForKey:@"client"]) {
-                    NSMutableDictionary *clientDict = [[bodyDict objectForKey:@"client"] mutableCopy];
-                    NSString *oldVersion = [clientDict objectForKey:@"clientVersion"];
-                    [clientDict setObject:kInnerTubeClientVersion forKey:@"clientVersion"];
-                    [clientDict setObject:@"ANDROID" forKey:@"clientName"];  // Force ANDROID client
-                    [clientDict removeObjectForKey:@"deviceModel"];
-                    [clientDict removeObjectForKey:@"osName"];
-                    [clientDict removeObjectForKey:@"osVersion"];
-                    [bodyDict setObject:clientDict forKey:@"client"];
-                    
-                    NSLog(@"YouTubeFix: Patched clientVersion from %@ to %@", oldVersion, kInnerTubeClientVersion);
-                    
-                    // Re-encode the body
-                    NSData *newBodyData = [NSJSONSerialization dataWithJSONObject:bodyDict options:0 error:&jsonError];
-                    if (newBodyData) {
-                        [mutableRequest setHTTPBody:newBodyData];
-                        [mutableRequest setValue:[NSString stringWithFormat:@"%lu", (unsigned long)newBodyData.length] forHTTPHeaderField:@"Content-Length"];
+                    id clientObj = [bodyDict objectForKey:@"client"];
+                    if ([clientObj isKindOfClass:[NSDictionary class]]) {
+                        NSMutableDictionary *clientDict = [clientObj mutableCopy];
+                        NSString *oldVersion = [clientDict objectForKey:@"clientVersion"];
+                        [clientDict setObject:kInnerTubeClientVersion forKey:@"clientVersion"];
+                        [clientDict setObject:@"ANDROID" forKey:@"clientName"];
+                        // Remove fields that might cause issues
+                        [clientDict removeObjectForKey:@"deviceModel"];
+                        [clientDict removeObjectForKey:@"osName"];
+                        [clientDict removeObjectForKey:@"osVersion"];
+                        [clientDict removeObjectForKey:@"platform"];
+                        [clientDict removeObjectForKey:@"hl"];
+                        [bodyDict setObject:clientDict forKey:@"client"];
+                        patched = YES;
+                        
+                        NSLog(@"YouTubeFix: Patched JSON body (clientVersion: %@ -> %@)", oldVersion, kInnerTubeClientVersion);
+                    }
+                }
+                
+                if (patched) {
+                    NSData *newBody = [NSJSONSerialization dataWithJSONObject:bodyDict options:0 error:&jsonError];
+                    if (newBody) {
+                        [mutableRequest setHTTPBody:newBody];
+                        [mutableRequest setValue:[NSString stringWithFormat:@"%lu", (unsigned long)newBody.length] forHTTPHeaderField:@"Content-Length"];
+                        [mutableRequest setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
                     }
                 }
             } else {
-                NSLog(@"YouTubeFix: Could not parse JSON body: %@", jsonError.localizedDescription);
+                // Not JSON - might be protobuf or binary format
+                // Try as property list
+                NSError *plistError = nil;
+                NSMutableDictionary *plistDict = [NSPropertyListSerialization propertyListWithData:bodyData options:NSPropertyListMutableContainers format:NULL error:&plistError];
+                
+                if (plistDict && !plistError && [plistDict isKindOfClass:[NSDictionary class]]) {
+                    if ([plistDict objectForKey:@"client"]) {
+                        NSMutableDictionary *clientDict = [[plistDict objectForKey:@"client"] mutableCopy];
+                        NSString *oldVersion = [clientDict objectForKey:@"clientVersion"];
+                        [clientDict setObject:kInnerTubeClientVersion forKey:@"clientVersion"];
+                        [clientDict setObject:@"ANDROID" forKey:@"clientName"];
+                        [plistDict setObject:clientDict forKey:@"client"];
+                        
+                        NSData *newBody = [NSPropertyListSerialization dataWithPropertyList:plistDict format:NSPropertyListXMLFormat_v1_0 options:0 error:&plistError];
+                        if (newBody) {
+                            [mutableRequest setHTTPBody:newBody];
+                            [mutableRequest setValue:[NSString stringWithFormat:@"%lu", (unsigned long)newBody.length] forHTTPHeaderField:@"Content-Length"];
+                        }
+                        NSLog(@"YouTubeFix: Patched plist body (clientVersion: %@)", oldVersion);
+                    }
+                } else {
+                    // Binary format - can't easily patch
+                    // Just log the raw data info
+                    NSLog(@"YouTubeFix: InnerTube body is binary (%lu bytes), skipping patch", (unsigned long)bodyData.length);
+                }
             }
         }
         
-        // Use the patched request
         return %orig(mutableRequest, completionHandler);
     }
     
@@ -63,7 +95,7 @@ static NSString * const kInnerTubeApiKey = @"AIzaSyB-63vPrdThhKuerbB2N_l7Kwwcxj6
 
 %end
 
-// Also hook NSURLConnection for completeness
+// Hook NSURLConnection for completeness
 %hook NSURLConnection
 
 + (NSURLConnection *)connectionWithRequest:(NSURLRequest *)request delegate:(id)delegate {
@@ -73,22 +105,22 @@ static NSString * const kInnerTubeApiKey = @"AIzaSyB-63vPrdThhKuerbB2N_l7Kwwcxj6
         NSMutableURLRequest *mutableRequest = [request mutableCopy];
         NSData *bodyData = request.HTTPBody;
         
-        if (bodyData) {
+        if (bodyData && bodyData.length > 0) {
             NSError *jsonError = nil;
             NSMutableDictionary *bodyDict = [NSJSONSerialization JSONObjectWithData:bodyData options:NSJSONReadingMutableContainers error:&jsonError];
             
             if (bodyDict && !jsonError && [bodyDict objectForKey:@"client"]) {
                 NSMutableDictionary *clientDict = [[bodyDict objectForKey:@"client"] mutableCopy];
+                NSString *oldVersion = [clientDict objectForKey:@"clientVersion"];
                 [clientDict setObject:kInnerTubeClientVersion forKey:@"clientVersion"];
                 [clientDict setObject:@"ANDROID" forKey:@"clientName"];
-                [clientDict removeObjectForKey:@"deviceModel"];
                 [bodyDict setObject:clientDict forKey:@"client"];
                 
                 NSData *newBody = [NSJSONSerialization dataWithJSONObject:bodyDict options:0 error:&jsonError];
                 if (newBody) {
                     [mutableRequest setHTTPBody:newBody];
                 }
-                NSLog(@"YouTubeFix[NSURLConnection]: Patched InnerTube request");
+                NSLog(@"YouTubeFix[NSURLConnection]: Patched plist body (clientVersion: %@ -> %@)", oldVersion, kInnerTubeClientVersion);
             }
         }
         
@@ -102,6 +134,6 @@ static NSString * const kInnerTubeApiKey = @"AIzaSyB-63vPrdThhKuerbB2N_l7Kwwcxj6
 
 __attribute__((constructor))
 static void init() {
-    NSLog(@"YouTubeFix v1.0.3: InnerTube API Patcher loaded!");
+    NSLog(@"YouTubeFix v1.0.4: InnerTube API Patcher loaded!");
     NSLog(@"YouTubeFix: Targeting API version %@", kInnerTubeClientVersion);
 }
