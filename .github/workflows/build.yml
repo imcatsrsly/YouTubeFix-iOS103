@@ -16,6 +16,8 @@ jobs:
       - name: Install Theos
         run: |
           git clone https://github.com/theos/theos.git /tmp/theos
+          cd /tmp/theos
+          git submodule update --init --recursive
           echo "THEOS=/tmp/theos" >> $GITHUB_ENV
           echo "PATH=/tmp/theos/bin:$PATH" >> $GITHUB_ENV
 
