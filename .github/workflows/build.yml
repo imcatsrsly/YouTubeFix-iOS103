@@ -50,13 +50,13 @@ jobs:
         run: |
           VERSION=$(grep -i "^version:" control | awk '{print $2}')
           echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "Artifact will be named: YouTubeFix_v$VERSION"
-          mv .theos/obj/debug/*.deb /tmp/YouTubeFix_v${VERSION}.deb || true
-          ls -la /tmp/YouTubeFix_v*.deb || ls -la packages/*.deb
+          echo "DEB_FILE=YouTubeFix_v${VERSION}.deb" >> $GITHUB_ENV
+          cp packages/*.deb /tmp/YouTubeFix_v${VERSION}.deb
+          ls -la /tmp/YouTubeFix_v${VERSION}.deb
 
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: YouTubeFix_v${VERSION}
-          path: /tmp/YouTubeFix_v${VERSION}.deb
+          name: ${{ env.DEB_FILE }}
+          path: /tmp/${{ env.DEB_FILE }}
 
