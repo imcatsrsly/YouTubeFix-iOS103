@@ -5,8 +5,8 @@
 // Fix for "Error loading" on iOS 10.3.3
 
 // Target API version - use a more recent one that's still compatible
-#define INNER_TUBE_CLIENT_VERSION "19.14.03"
-#define INNER_TUBE_API_KEY "AIzaSyB-63vPrdThhKuerbB2N_l7Kwwcxj6yUAc"
+static NSString * const kInnerTubeClientVersion = @"19.14.03";
+static NSString * const kInnerTubeApiKey = @"AIzaSyB-63vPrdThhKuerbB2N_l7Kwwcxj6yUAc";
 
 // Hook NSURLSession to patch InnerTube requests
 %hook NSURLSession
@@ -33,14 +33,14 @@
                 if ([bodyDict objectForKey:@"client"]) {
                     NSMutableDictionary *clientDict = [[bodyDict objectForKey:@"client"] mutableCopy];
                     NSString *oldVersion = [clientDict objectForKey:@"clientVersion"];
-                    [clientDict setObject:INNER_TUBE_CLIENT_VERSION forKey:@"clientVersion"];
+                    [clientDict setObject:kInnerTubeClientVersion forKey:@"clientVersion"];
                     [clientDict setObject:@"ANDROID" forKey:@"clientName"];  // Force ANDROID client
                     [clientDict removeObjectForKey:@"deviceModel"];
                     [clientDict removeObjectForKey:@"osName"];
                     [clientDict removeObjectForKey:@"osVersion"];
                     [bodyDict setObject:clientDict forKey:@"client"];
                     
-                    NSLog(@"YouTubeFix: Patched clientVersion from %@ to %@", oldVersion, INNER_TUBE_CLIENT_VERSION);
+                    NSLog(@"YouTubeFix: Patched clientVersion from %@ to %@", oldVersion, kInnerTubeClientVersion);
                     
                     // Re-encode the body
                     NSData *newBodyData = [NSJSONSerialization dataWithJSONObject:bodyDict options:0 error:&jsonError];
@@ -79,7 +79,7 @@
             
             if (bodyDict && !jsonError && [bodyDict objectForKey:@"client"]) {
                 NSMutableDictionary *clientDict = [[bodyDict objectForKey:@"client"] mutableCopy];
-                [clientDict setObject:INNER_TUBE_CLIENT_VERSION forKey:@"clientVersion"];
+                [clientDict setObject:kInnerTubeClientVersion forKey:@"clientVersion"];
                 [clientDict setObject:@"ANDROID" forKey:@"clientName"];
                 [clientDict removeObjectForKey:@"deviceModel"];
                 [bodyDict setObject:clientDict forKey:@"client"];
@@ -103,5 +103,5 @@
 __attribute__((constructor))
 static void init() {
     NSLog(@"YouTubeFix v1.0.3: InnerTube API Patcher loaded!");
-    NSLog(@"YouTubeFix: Targeting API version %@", INNER_TUBE_CLIENT_VERSION);
+    NSLog(@"YouTubeFix: Targeting API version %@", kInnerTubeClientVersion);
 }
