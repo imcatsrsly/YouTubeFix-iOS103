@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleIdentifier</key>
+	<string>com.unigox.youtubefix</string>
+	<key>CFBundleName</key>
+	<string>YouTubeFix</string>
+	<key>CFBundleVersion</key>
+	<string>1.0.0</string>
+	<key>CFBundleExecutable</key>
+	<string>YouTubeFix</string>
+	<key>CFBundleDisplayName</key>
+	<string>YouTubeFix</string>
+	<key>CFBundlePackageType</key>
+	<string>Tweak</string>
+	<key>Filter</key>
+	<dict>
+		<key>Executables</key>
+		<array>
+			<string>YouTube</string>
+			<string>Instagram</string>
+		</array>
+		<key>UIApplication</key>
+		<true/>
+	</dict>
+</dict>
+</plist>
