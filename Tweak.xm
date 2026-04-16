@@ -2,15 +2,11 @@
 #import <Foundation/Foundation.h>
 
 // YouTube URL Logger for iOS 10.3.3
-// Logs all network requests made by YouTube
 
 // Hook NSURLConnection to log requests
 %hook NSURLConnection
 - (void)start {
-    NSURLRequest *req = self;
-    if (req) {
-        NSLog(@"YouTubeFix[NSURLConnection]: %@ %@", req.HTTPMethod, req.URL.absoluteString);
-    }
+    NSLog(@"YouTubeFix[NSURLConnection-start]");
     %orig;
 }
 
@@ -36,36 +32,20 @@
 // Hook NSURLSessionTask to log when task starts
 %hook NSURLSessionTask
 - (void)resume {
-    NSLog(@"YouTubeFix[Task]: %@ %@", self.taskDescription, self.originalRequest.URL.absoluteString);
+    NSLog(@"YouTubeFix[Task resume]: %@", self.originalRequest.URL.absoluteString);
     %orig;
 }
 %end
 
-// Hook NSMutableURLRequest to see modifications
+// Hook NSMutableURLRequest 
 %hook NSMutableURLRequest
 - (void)setURL:(NSURL *)url {
-    NSLog(@"YouTubeFix[MutableURL]: setting URL to %@", url.absoluteString);
+    NSLog(@"YouTubeFix[MutableURL]: %@", url.absoluteString);
     %orig;
-}
-
-- (void)setValue:(NSString *)value forHTTPHeaderField:(NSString *)field {
-    NSLog(@"YouTubeFix[Header]: %@ = %@", field, value);
-    %orig;
-}
-%end
-
-// Hook CFNetwork to catch lower-level stuff
-%hook NSURLResponse
-- (NSString *)URL {
-    NSString *url = %orig;
-    if (url) {
-        NSLog(@"YouTubeFix[Response URL]: %@", url);
-    }
-    return url;
 }
 %end
 
 __attribute__((constructor))
 static void init() {
-    NSLog(@"YouTubeFix: URL Logger loaded on iOS 10.3.3!");
+    NSLog(@"YouTubeFix: URL Logger loaded!");
 }
