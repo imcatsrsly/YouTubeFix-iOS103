@@ -30,13 +30,13 @@ jobs:
           ARCHS: arm64 armv7
           TARGET: iphone:clang:latest:10.3
         run: |
-          cd YouTubeFix
+          pwd
+          ls -la
           make clean
           make
 
       - name: Package
         run: |
-          cd YouTubeFix
           make package
           ls -la .theos/obj/debug/
 
@@ -44,5 +44,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: YouTubeFix
-          path: YouTubeFix/.theos/obj/debug/**/*.deb
+          path: .theos/obj/debug/**/*.deb
 
