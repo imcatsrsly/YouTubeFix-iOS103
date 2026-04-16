@@ -19,7 +19,7 @@ static NSString * const kInnerTubeClientVersion = @"19.14.03";
         
         if (bodyData && bodyData.length > 0) {
             
-            const uint8_t *bytes = bodyData.bytes;
+            const uint8_t *bytes = (const uint8_t *)bodyData.bytes;
             BOOL isBinaryPlist = (bodyData.length > 8 && 
                                    bytes[0] == 0x62 && bytes[1] == 0x70 && 
                                    bytes[2] == 0x6C && bytes[3] == 0x69 && 
@@ -45,7 +45,7 @@ static NSString * const kInnerTubeClientVersion = @"19.14.03";
                         CFMutableDictionaryRef clientDict = CFDictionaryCreateMutableCopy(kCFAllocatorDefault, 0, (CFDictionaryRef)clientRef);
                         
                         // Patch version
-                        CFDictionarySetValue(clientDict, CFSTR("clientVersion"), (__bridge CFRef)([kInnerTubeClientVersion copy]));
+                        CFDictionarySetValue(clientDict, CFSTR("clientVersion"), (__bridge CFTypeRef)([kInnerTubeClientVersion copy]));
                         CFDictionarySetValue(clientDict, CFSTR("clientName"), CFSTR("ANDROID"));
                         
                         // Remove problematic keys
